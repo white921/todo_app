@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; //アイコンを持ってくるため
 import 'package:intl/intl.dart'; //Dateなどに関係するもの
+import 'package:shared_preferences/shared_preferences.dart';
 import 'add_task_page.dart';
+import 'dart:convert'; // JSONエンコード/デコードのためにインポート
 
 class HomeScreen extends StatefulWidget { //StatefulになってるのはUIに変数を持っているから
                                           //setState()が使えるのはStatefulだから。
@@ -9,20 +11,85 @@ class HomeScreen extends StatefulWidget { //StatefulになってるのはUIに�
   HomeScreenState createState() => HomeScreenState(); //createState メソッド は、StatefulWidget を実際に描画・更新するために、State クラスのインスタンスを作成するメソッド
 }
 
+class Task {
+  String name;
+  DateTime? dueDate;
+  bool isCompleted;
+
+  Task({
+    required this.name,
+    this.dueDate,
+    this.isCompleted = false,
+  });
+
+  // JSON形式に変換
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'dueDate': dueDate?.toIso8601String(),
+    'isCompleted': isCompleted,
+  };
+  // JSONからTaskを作成
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      name: json['name'],
+      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      isCompleted: json['isCompleted'] ?? false,
+    );
+  }
+
+}
+
 class HomeScreenState extends State<HomeScreen> {
-  final List<Map<String, dynamic>> tasks = []; //未完了タスクのリスト
-  final List<Map<String, dynamic>> completedTasks = []; //完了タスクのリスト
+  List<Task> tasks = []; //未完了タスクのリスト
+  List<Task> completedTasks = []; //完了タスクのリスト
   final GlobalKey<AnimatedListState> incompleteListKey = GlobalKey<AnimatedListState>(); //未完了タスクのリストキー(アニメーションのため)
   final GlobalKey<AnimatedListState> completedListKey = GlobalKey<AnimatedListState>(); //完了タスクのリストキー(アニメーションのため)
 
+  
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks(); // 初期化時にタスクを読み込む
+  }
 
   //タスクを追加するメソッド、MapはKeyとValueがペアになったデータコレクション、dynamic型は動的な型
-  void addTask(Map<String, dynamic> task) { 
-    task['isCompleted'] = task['isCompleted'] ?? false; //task['isCompleted']がnullだったらtask['isCompleted']にfalseを代入するぞってやつ
+  void addTask(Task task) { 
     tasks.add(task); //tasksリストにtaskを追加
     if (tasks.isNotEmpty){
       incompleteListKey.currentState?.insertItem(tasks.length - 1); //incompleteListKey.currentStateがnullじゃなかったらinsertItemが呼ばれる
     }
+    _saveTasks();
+  }
+
+  // タスクを保存する関数
+  Future<void> _saveTasks() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // tasksをJSON形式の文字列に変換して保存
+    String tasksJson = json.encode(tasks.map((task) => task.toJson()).toList());
+    String completedTasksJson = jsonEncode(completedTasks.map((task) => task.toJson()).toList());
+    await prefs.setString("tasks", tasksJson); // 未完了タスクの保存
+    await prefs.setString("completedTasks", completedTasksJson); // 完了タスクの保存
+    //List<Task>をそのまま保存することはできないからJson形式の文字列に変換して保存した
+  }
+  
+  Future<void> _loadTasks() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    // JSON形式の文字列として保存されたタスクを取得
+    String? tasksJson = prefs.getString("tasks");
+    String? completedTasksJson = prefs.getString("completedTasks");
+
+    //JSON形式の文字列をデコード
+    if (tasksJson != null) {
+    tasks = (jsonDecode(tasksJson) as List).map((data) => Task.fromJson(data)).toList();
+  }
+  if (completedTasksJson != null) {
+    completedTasks = (jsonDecode(completedTasksJson) as List).map((data) => Task.fromJson(data)).toList();
+  }
+
+    setState(() {});
   }
 
 
@@ -31,6 +98,7 @@ class HomeScreenState extends State<HomeScreen> {
     if (index < 0 || index >= tasks.length) return;
 
     final task = tasks[index];
+    tasks.removeAt(index);
 
     incompleteListKey.currentState?.removeItem( //まだこの段階ではisCompletedがTrueになってない
       index,
@@ -39,15 +107,13 @@ class HomeScreenState extends State<HomeScreen> {
     );
 
     setState(() {
-      task['isCompleted'] = true;
+      task.isCompleted = true;
       completedTasks.add(task);
       if (completedTasks.isNotEmpty) {
         completedListKey.currentState?.insertItem(completedTasks.length - 1);
       }
-       
+      _saveTasks(); // 状態変更後に保存
     });
-
-
     
   }
 
@@ -62,6 +128,7 @@ class HomeScreenState extends State<HomeScreen> {
         (context, animation) => buildItem(removedTask, animation, true),
         duration: const Duration(milliseconds: 300),
       );   
+      _saveTasks(); // 削除後に保存
     }else{
       if (index < 0 || index >= tasks.length) return;
       final removedTask = tasks[index];
@@ -72,12 +139,13 @@ class HomeScreenState extends State<HomeScreen> {
       );
       setState(() {
         tasks.removeAt(index);
+        _saveTasks(); 
       });
     }
   }
   
   //タスク削除時のアニメーション
-  Widget buildItem(Map<String, dynamic> task, Animation<double> animation, bool isCompleted) { //
+  Widget buildItem(Task task, Animation<double> animation, bool isCompleted) { //
     return FadeTransition( //アニメーションに応じて透明度を変化
       opacity: animation,
       child: SizeTransition( 
@@ -87,37 +155,10 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  //タスクの位置が移動するときのアニメーション
-  Widget buildSlideItem(Map<String, dynamic> task, Animation<double> animation, {AxisDirection direction = AxisDirection.down, required bool isCompleted}) {
-    Offset beginOffset; //
-    switch (direction) {
-      case AxisDirection.up:
-        beginOffset = const Offset(0, 1);
-        break;
-      case AxisDirection.down:
-        beginOffset = const Offset(0, -1);
-        break;
-      case AxisDirection.left:
-        beginOffset = const Offset(1, 0);
-        break;
-      case AxisDirection.right:
-        beginOffset = const Offset(-1, -0);
-        break;
-    }
-
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: beginOffset,
-        end: Offset.zero,
-      ).animate(animation),
-      child: buildTaskContent(task, animation, isCompleted),
-    );
-  }
-
   //タスクごとのカードの中身を作成
-  Widget buildTaskContent(Map<String, dynamic> task, Animation<double> animation, bool isCompleted) {
-    final dueDate = task['dueDate'] != null //task['dueDate']がnullじゃなかったらそれをdueDateに代入
-      ? DateFormat('yyyy-MM-dd HH:mm').format(task['dueDate']) //format メソッドが指定した日時オブジェクト (task['dueDate']) を上記のフォーマットに基づいて文字列に変換
+  Widget buildTaskContent(Task task, Animation<double> animation, bool isCompleted) {
+    final dueDate = task.dueDate != null //task['dueDate']がnullじゃなかったらそれをdueDateに代入
+      ? DateFormat('yyyy-MM-dd HH:mm').format(task.dueDate!) //format メソッドが指定した日時オブジェクト (task['dueDate']) を上記のフォーマットに基づいて文字列に変換
       : "期限: なし";
 
     //タスクカードを表示させるときのアニメーション
@@ -167,7 +208,7 @@ class HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      task["task"],
+                      task.name,
                       style: const TextStyle(
                         fontSize: 20,
                         color: Colors.white,
@@ -192,16 +233,17 @@ class HomeScreenState extends State<HomeScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => AddTaskPage(
-                            initialTask: task['task'],
-                            initialDueDate: task['dueDate'],
+                            initialTask: task.name,
+                            initialDueDate: task.dueDate,
                           ),
                         ),
                       );
 
                       if (updatedTask != null && updatedTask.isNotEmpty) {
                         setState(() {
-                          task['task'] = updatedTask['task'];
-                          task['dueDate'] = updatedTask['dueDate'];
+                          task.name = updatedTask.name;
+                          task.dueDate = updatedTask.dueDate;
+                          _saveTasks(); // 編集後に保存
                         });
                       }
                     },
@@ -219,7 +261,7 @@ class HomeScreenState extends State<HomeScreen> {
                       ''',
                       width: 24,
                       height: 24,
-                      color: Colors.red,
+                      colorFilter: ColorFilter.mode(Colors.red, BlendMode.srcIn),
                     ),
                   ),
                 ],
@@ -259,7 +301,7 @@ class HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(8),
               initialItemCount: tasks.length,
               itemBuilder: (context, index, animation) {
-                return buildSlideItem(tasks[index], animation, direction: AxisDirection.down, isCompleted: false);
+                return buildItem(tasks[index], animation, false);
               },
             ),
             AnimatedList(
@@ -267,18 +309,18 @@ class HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(8),
               initialItemCount: completedTasks.length,
               itemBuilder: (context, index, animation) {
-                return buildSlideItem(completedTasks[index], animation, direction: AxisDirection.up, isCompleted: true);
+                return buildItem(completedTasks[index], animation, true);
               },
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            final Map<String, dynamic>? newTask = await Navigator.push(
+            final Task? newTask = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AddTaskPage()),
             );
-            if (newTask != null && newTask.isNotEmpty) {
+            if (newTask != null) {
               setState(() {
                 addTask(newTask);
               });

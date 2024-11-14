@@ -59,11 +59,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
   }
   
 
-  // @override
-  // void dispose() {
-  //   _taskController.dispose(); // ウィジェット破棄時にコントローラを解放
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    _taskController.dispose(); // ウィジェット破棄時にコントローラを解放
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
