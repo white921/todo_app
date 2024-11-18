@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'HomeScreen.dart';
 
 
 // タスク追加ページのウィジェット
@@ -151,7 +152,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
               ElevatedButton(
                 onPressed: () {
                   final taskName = _taskController.text;
-                  Navigator.pop(context, {'task': taskName, 'dueDate': _dueDate}); // 入力されたタスク名を返して前の画面に戻る
+                  Navigator.pop(context, Task(name: taskName, dueDate: _dueDate),); // 入力されたタスク名を返して前の画面に戻る
                 },
                 child: const Text("タスクを保存"), // 保存ボタンのテキスト
               ),

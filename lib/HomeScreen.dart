@@ -39,18 +39,25 @@ class Task {
 
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{
   List<Task> tasks = []; //未完了タスクのリスト
   List<Task> completedTasks = []; //完了タスクのリスト
   final GlobalKey<AnimatedListState> incompleteListKey = GlobalKey<AnimatedListState>(); //未完了タスクのリストキー(アニメーションのため)
   final GlobalKey<AnimatedListState> completedListKey = GlobalKey<AnimatedListState>(); //完了タスクのリストキー(アニメーションのため)
-
+  late TabController _tabController;
   
 
   @override
   void initState() {
     super.initState();
     _loadTasks(); // 初期化時にタスクを読み込む
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   //タスクを追加するメソッド、MapはKeyとValueがペアになったデータコレクション、dynamic型は動的な型
@@ -120,6 +127,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   //削除ボタンが押されたらindexのタスクを削除
   void removeTask(int index, bool isCompleted) { 
+    print("removeTask called with index: $index, isCompleted: $isCompleted");
     if (isCompleted){
       if (index < 0 || index >= completedTasks.length) return;
       final removedTask = completedTasks[index];
@@ -127,8 +135,12 @@ class HomeScreenState extends State<HomeScreen> {
         index,
         (context, animation) => buildItem(removedTask, animation, true),
         duration: const Duration(milliseconds: 300),
-      );   
-      _saveTasks(); // 削除後に保存
+      );
+      setState(() {
+        completedTasks.removeAt(index); // タスクリストから削除
+        _saveTasks(); // 削除後に保存
+      });
+      
     }else{
       if (index < 0 || index >= tasks.length) return;
       final removedTask = tasks[index];
@@ -229,7 +241,7 @@ class HomeScreenState extends State<HomeScreen> {
                 children: [
                   IconButton(
                     onPressed: () async {
-                      final updatedTask = await Navigator.push(
+                      final Task? updatedTask = await Navigator.push<Task>(
                         context,
                         MaterialPageRoute(
                           builder: (context) => AddTaskPage(
@@ -239,7 +251,7 @@ class HomeScreenState extends State<HomeScreen> {
                         ),
                       );
 
-                      if (updatedTask != null && updatedTask.isNotEmpty) {
+                      if (updatedTask != null) {
                         setState(() {
                           task.name = updatedTask.name;
                           task.dueDate = updatedTask.dueDate;
@@ -250,7 +262,15 @@ class HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.edit, color: Colors.blue),
                   ),
                   IconButton(
-                    onPressed: () => removeTask(tasks.indexOf(task), isCompleted),
+                    onPressed: () {
+                      print("Delete button clicked for task: ${task.name}");
+                      if(isCompleted){
+                        removeTask(completedTasks.indexOf(task), isCompleted);
+                      }else{
+                        removeTask(tasks.indexOf(task), isCompleted);
+                      }
+                      
+                    },
                     icon: SvgPicture.string(
                       '''
                       <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
@@ -285,7 +305,8 @@ class HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
           backgroundColor: Colors.black,
-          bottom: const TabBar(
+          bottom: TabBar(
+            controller: _tabController, // カスタムコントローラ
             tabs: [
               Tab(text: "未完了のタスク"),
               Tab(text: "完了済みタスク"),
@@ -295,6 +316,7 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
         body: TabBarView(
+          controller: _tabController, // カスタムコントローラ
           children: [
             AnimatedList(
               key: incompleteListKey,
