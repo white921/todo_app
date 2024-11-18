@@ -12,14 +12,17 @@ class HomeScreen extends StatefulWidget { //StatefulになってるのはUIに�
 }
 
 class Task {
+
+  //フィールド
   String name;
-  DateTime? dueDate;
+  DateTime? dueDate; //?はnullを許可するため(ヌル許容型)
   bool isCompleted;
 
+  //コンストラクタ(初期値設定)
   Task({
-    required this.name,
+    required this.name, //requiredは必須の変数
     this.dueDate,
-    this.isCompleted = false,
+    this.isCompleted = false, //最初は絶対false
   });
 
   // JSON形式に変換
@@ -39,19 +42,21 @@ class Task {
 
 }
 
-class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{
+//HomeScreenウィジェットの状態を管理するためのStateクラス
+class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{ //with SingleTickerProviderStateMixinはvsync（垂直同期）を使えるようにする
   List<Task> tasks = []; //未完了タスクのリスト
   List<Task> completedTasks = []; //完了タスクのリスト
   final GlobalKey<AnimatedListState> incompleteListKey = GlobalKey<AnimatedListState>(); //未完了タスクのリストキー(アニメーションのため)
   final GlobalKey<AnimatedListState> completedListKey = GlobalKey<AnimatedListState>(); //完了タスクのリストキー(アニメーションのため)
-  late TabController _tabController;
+  late TabController _tabController; //タブの切り替えを管理するためのコントローラ
   
 
+  //ウィジェットの初期化処理
   @override
   void initState() {
-    super.initState();
+    super.initState(); //親クラスのinitStateを呼び出す
     _loadTasks(); // 初期化時にタスクを読み込む
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this); //2つのタブを管理する
   }
 
   @override
