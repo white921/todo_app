@@ -40,7 +40,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       // 時間選択
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_dueDate ?? DateTime.now()),
+        initialTime: TimeOfDay.fromDateTime(_dueDate),
       );
 
       if (pickedTime != null) {
@@ -129,9 +129,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
               Row(
                 children: [
                   Text(
-                    _dueDate == null
-                        ? "期限を選択してください"
-                        : "期限: ${DateFormat('yyyy-MM-dd HH:mm').format(_dueDate)}",
+                     "期限: ${DateFormat('yyyy-MM-dd HH:mm').format(_dueDate)}",
                   ),
                   IconButton(
                       onPressed: _selectDueDate,
