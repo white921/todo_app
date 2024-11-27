@@ -26,7 +26,7 @@ class Task {
     this.isCompleted = false, //最初は絶対false
   });
 
-  // JSON形式に変換
+  //JSON形式に変換
   Map<String, dynamic> toJson() => {
         'name': name,
         'dueDate': dueDate.toIso8601String(),
