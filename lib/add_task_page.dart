@@ -15,15 +15,13 @@ class AddTaskPage extends StatefulWidget {
 }
 
 class _AddTaskPageState extends State<AddTaskPage> {
-  TextEditingController _taskController =
-      TextEditingController(); // テキスト入力を管理するコントローラ
+  TextEditingController _taskController =TextEditingController(); // テキスト入力を管理するコントローラ
   DateTime _dueDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _taskController = TextEditingController(text: widget.initialTask);
-    // _dueDate = widget.initialDueDate;
   }
 
   // 期限選択（日時を含む）

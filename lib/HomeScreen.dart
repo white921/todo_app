@@ -16,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 class Task {
   //フィールド
   String name;
-  DateTime dueDate; //?はnullを許可するため(ヌル許容型)
+  DateTime dueDate; 
   bool isCompleted;
 
   //コンストラクタ(初期値設定)
@@ -34,6 +34,9 @@ class Task {
       };
   // JSONからTaskを作成
   factory Task.fromJson(Map<String, dynamic> json) {
+    if (json['dueDate'] == null) {
+      throw ArgumentError('dueDate is required.');
+    }
     return Task(
       name: json['name'],
       dueDate: DateTime.parse(json['dueDate']),
@@ -263,7 +266,7 @@ class HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    formattedDate,
+                    "締切:" + formattedDate,
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
