@@ -6,6 +6,8 @@ import 'add_task_page.dart';
 import 'dart:convert'; // JSONエンコード/デコードのためにインポート
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   //StatefulになってるのはUIに変数を持っているから
   //setState()が使えるのはStatefulだから。
   @override
@@ -16,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 class Task {
   //フィールド
   String name;
-  DateTime dueDate; 
+  DateTime dueDate;
   bool isCompleted;
 
   //コンストラクタ(初期値設定)
@@ -75,7 +77,8 @@ class HomeScreenState extends State<HomeScreen>
   void addTask(Task task) {
     tasks.add(task); //tasksリストにtaskを追加
     if (tasks.isNotEmpty) {
-      incompleteListKey.currentState?.insertItem(tasks.length - 1); //incompleteListKey.currentStateがnullじゃなかったらinsertItemが呼ばれる
+      incompleteListKey.currentState?.insertItem(tasks.length -
+          1); //incompleteListKey.currentStateがnullじゃなかったらinsertItemが呼ばれる
     }
     _saveTasks();
   }
@@ -203,14 +206,16 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   //タスクごとのカードの中身を作成
-  Widget buildTaskContent(Task task, Animation<double> animation, bool isCompleted) {
-    String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(task.dueDate); //format メソッドが指定した日時オブジェクト (task['dueDate']) を上記のフォーマットに基づいて文字列に変換
-        
+  Widget buildTaskContent(
+      Task task, Animation<double> animation, bool isCompleted) {
+    String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(task
+        .dueDate); //format メソッドが指定した日時オブジェクト (task['dueDate']) を上記のフォーマットに基づいて文字列に変換
 
     //タスクカードを表示させるときのアニメーション
     return Card(
       //アニメーションの対象がchildに指定されている
-      color: isCompleted ? Colors.grey[800] : Colors.black, //タスク完了時はグレー、未完了時は黒背景
+      color:
+          isCompleted ? Colors.grey[800] : Colors.black, //タスク完了時はグレー、未完了時は黒背景
       margin: const EdgeInsets.symmetric(vertical: 12), //カード間の上下距離
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15), //カードの角を丸めた
@@ -266,7 +271,7 @@ class HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "締切:" + formattedDate,
+                    "締切:$formattedDate",
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
