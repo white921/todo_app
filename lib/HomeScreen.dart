@@ -55,8 +55,7 @@ class HomeScreenState extends State<HomeScreen>
   List<Task> completedTasks = []; //完了タスクのリスト
   final GlobalKey<AnimatedListState> incompleteListKey =
       GlobalKey<AnimatedListState>(); //未完了タスクのリストキー(アニメーションのため)
-  final GlobalKey<AnimatedListState> completedListKey =
-      GlobalKey<AnimatedListState>(); //完了タスクのリストキー(アニメーションのため)
+  final GlobalKey<AnimatedListState> completedListKey = GlobalKey<AnimatedListState>(); //完了タスクのリストキー(アニメーションのため)
   late TabController _tabController; //タブの切り替えを管理するためのコントローラ
 
   //ウィジェットの初期化処理
@@ -77,8 +76,7 @@ class HomeScreenState extends State<HomeScreen>
   void addTask(Task task) {
     tasks.add(task); //tasksリストにtaskを追加
     if (tasks.isNotEmpty) {
-      incompleteListKey.currentState?.insertItem(tasks.length -
-          1); //incompleteListKey.currentStateがnullじゃなかったらinsertItemが呼ばれる
+      incompleteListKey.currentState?.insertItem(tasks.length - 1); //incompleteListKey.currentStateがnullじゃなかったらinsertItemが呼ばれる
     }
     _saveTasks();
   }
