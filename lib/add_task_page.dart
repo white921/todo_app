@@ -8,7 +8,7 @@ class AddTaskPage extends StatefulWidget {
   final String? initialTask;
   final DateTime? initialDueDate;
 
-  AddTaskPage({this.initialTask, this.initialDueDate});
+  const AddTaskPage({super.key, this.initialTask, this.initialDueDate});
 
   @override
   _AddTaskPageState createState() => _AddTaskPageState();

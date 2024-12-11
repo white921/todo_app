@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart'; //基本的なウィジェットを使えるようにするためのimport
-import 'HomeScreen.dart';
 import 'package:device_preview/device_preview.dart'; //device_previewのためのimport
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'login_page.dart';
+import 'firebase_options.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(DevicePreview(
-    enabled: true, //ここがtrueだとDevicePreviewが有効
-    tools: const [
-      ...DevicePreview.defaultTools, //プレビューに必要なツール
-    ],
-    builder: (context) => const MyApp(), //プレビュー対象のアプリ指定
+    enabled: !kReleaseMode, // リリースモードでは無効化
+    builder: (context) => const MyApp(),
   ));
 }
+
+
 
 class MyApp extends StatelessWidget {
   //MyAppクラスはFlutterアプリのルートウィジェット(ウィジェットツリーの最上位)
@@ -22,7 +30,7 @@ class MyApp extends StatelessWidget {
     //BuildContextはbuildメソッドの引数によくいるやつ
     return MaterialApp(
       //インポートしてきた便利なやつ。これをreturnすることで中にあるものを描写される
-      home: HomeScreen(), //最初に起動させたいページの指定
+      home: LoginPage(), //最初に起動させたいページの指定
     );
   }
 }

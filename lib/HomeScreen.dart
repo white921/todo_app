@@ -102,17 +102,13 @@ class HomeScreenState extends State<HomeScreen>
     String? completedTasksJson = prefs.getString("completedTasks");
 
     //JSON形式の文字列をデコード
-    if (tasksJson != null) {
-      tasks = (jsonDecode(tasksJson) as List)
-          .map((data) => Task.fromJson(data))
-          .toList();
-    }
-    if (completedTasksJson != null) {
-      completedTasks = (jsonDecode(completedTasksJson) as List)
-          .map((data) => Task.fromJson(data))
-          .toList();
-    }
-
+    tasks = (jsonDecode(tasksJson!) as List)
+        .map((data) => Task.fromJson(data))
+        .toList();
+      completedTasks = (jsonDecode(completedTasksJson!) as List)
+        .map((data) => Task.fromJson(data))
+        .toList();
+  
     setState(() {});
   }
 
