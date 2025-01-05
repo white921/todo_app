@@ -1,36 +1,31 @@
-import 'package:flutter/material.dart'; //基本的なウィジェットを使えるようにするためのimport
-import 'package:device_preview/device_preview.dart'; //device_previewのためのimport
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart'; // Firebase 初期化用
 import 'login_page.dart';
-import 'firebase_options.dart';
+import 'HomeScreen.dart';
+import 'auth_service.dart';
+import 'package:device_preview/device_preview.dart';
 
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  runApp(DevicePreview(
-    enabled: !kReleaseMode, // リリースモードでは無効化
-    builder: (context) => const MyApp(),
-  ));
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized(); // Flutter エンジンの初期化
+  await Firebase.initializeApp(); // Firebase の初期化
+  runApp(
+    DevicePreview(
+      enabled: true,
+      builder: (context) => const MyApp()),
+    );
 }
 
-
-
 class MyApp extends StatelessWidget {
-  //MyAppクラスはFlutterアプリのルートウィジェット(ウィジェットツリーの最上位)
-  const MyApp({super.key}); //ウィジェットの一意識別に必要らしいがなくても動く(調べても難しかった)
+  const MyApp({super.key}); 
 
-  @override //メソッド前にいつもつけてる。buildメソッドはStatelessウィジェットだよって感じ
-  Widget build(BuildContext context) {
-    //buildメソッドはFlutterがこのウィジェットを画面に描画する際に呼び出すメソッド。
-    //BuildContextはbuildメソッドの引数によくいるやつ
-    return MaterialApp(
-      //インポートしてきた便利なやつ。これをreturnすることで中にあるものを描写される
-      home: LoginPage(), //最初に起動させたいページの指定
+  @override
+  build(BuildContext context){
+    return const MaterialApp(
+      home: HomeScreen(),
     );
   }
+
+ 
 }

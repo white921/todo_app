@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart'; //アイコンを持ってくる�
 import 'package:intl/intl.dart'; //Dateなどに関係するもの
 import 'package:shared_preferences/shared_preferences.dart';
 import 'add_task_page.dart';
+import 'login_page.dart';
+import 'auth_service.dart';
 import 'dart:convert'; // JSONエンコード/デコードのためにインポート
 
 class HomeScreen extends StatefulWidget {
@@ -57,6 +59,7 @@ class HomeScreenState extends State<HomeScreen>
       GlobalKey<AnimatedListState>(); //未完了タスクのリストキー(アニメーションのため)
   final GlobalKey<AnimatedListState> completedListKey = GlobalKey<AnimatedListState>(); //完了タスクのリストキー(アニメーションのため)
   late TabController _tabController; //タブの切り替えを管理するためのコントローラ
+  bool isLoading = true;
 
   //ウィジェットの初期化処理
   @override
@@ -83,33 +86,52 @@ class HomeScreenState extends State<HomeScreen>
 
   // タスクを保存する関数
   Future<void> _saveTasks() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // tasksをJSON形式の文字列に変換して保存
-    String tasksJson = json.encode(tasks.map((task) => task.toJson()).toList());
-    String completedTasksJson =
-        jsonEncode(completedTasks.map((task) => task.toJson()).toList());
-    await prefs.setString("tasks", tasksJson); // 未完了タスクの保存
-    await prefs.setString("completedTasks", completedTasksJson); // 完了タスクの保存
-    //List<Task>をそのまま保存することはできないからJson形式の文字列に変換して保存した
+      String tasksJson = jsonEncode(tasks.map((task) => task.toJson()).toList());
+      String completedTasksJson = jsonEncode(completedTasks.map((task) => task.toJson()).toList());
+
+      await prefs.setString("tasks", tasksJson);
+      await prefs.setString("completedTasks", completedTasksJson);
+    } catch (e) {
+      print('Error saving tasks: $e');
+      // 必要に応じてユーザーにエラーメッセージを表示
+    }
   }
 
   Future<void> _loadTasks() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // JSON形式の文字列として保存されたタスクを取得
-    String? tasksJson = prefs.getString("tasks");
-    String? completedTasksJson = prefs.getString("completedTasks");
+      String? tasksJson = prefs.getString("tasks");
+      String? completedTasksJson = prefs.getString("completedTasks");
 
-    //JSON形式の文字列をデコード
-    tasks = (jsonDecode(tasksJson!) as List)
-        .map((data) => Task.fromJson(data))
-        .toList();
-      completedTasks = (jsonDecode(completedTasksJson!) as List)
-        .map((data) => Task.fromJson(data))
-        .toList();
-  
-    setState(() {});
+      if (tasksJson != null) {
+        final List<dynamic> decodedTasks = jsonDecode(tasksJson);
+        tasks = decodedTasks.map((data) => Task.fromJson(data)).toList();
+      } else {
+        tasks = [];
+      }
+
+      if (completedTasksJson != null) {
+        final List<dynamic> decodedCompletedTasks = jsonDecode(completedTasksJson);
+        completedTasks = decodedCompletedTasks.map((data) => Task.fromJson(data)).toList();
+      } else {
+        completedTasks = [];
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading tasks: $e');
+      setState(() {
+        tasks = [];
+        completedTasks = [];
+        isLoading = false;
+      });
+    }
   }
 
   //完了ボタンを押したときの挙動を示すメソッド
@@ -197,6 +219,27 @@ class HomeScreenState extends State<HomeScreen>
             buildTaskContent(task, animation, isCompleted), //SizeTransitionの対象
       ),
     );
+  }
+
+  // ログアウトメソッド
+  Future<void> _signOut() async {
+    final AuthService _authService = AuthService(); // AuthService のインスタンス作成
+
+    try {
+      await _authService.signOut();
+
+      // ログインページにナビゲート（スタックを置き換える）
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    } catch (e) {
+      print('Error signing out: $e');
+      // エラーが発生した場合、ユーザーに通知する
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ログアウトに失敗しました: $e')),
+      );
+    }
   }
 
   //タスクごとのカードの中身を作成
@@ -351,6 +394,35 @@ class HomeScreenState extends State<HomeScreen>
             indicatorColor: Colors.white,
             labelColor: Colors.white,
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              iconSize: 40,
+              color: Colors.white,
+              tooltip: 'ログアウト',
+              onPressed: () async {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('ログアウト'),
+                    content: const Text('本当にログアウトしますか？'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('キャンセル'),
+                      ),
+                      TextButton(
+                        onPressed: (){
+                          Navigator.pop(context);
+                          _signOut();
+                        },
+                        child: const Text('ログアウト'),)
+                    ],
+                  )
+                );
+              }
+            )
+          ],
         ),
         body: TabBarView(
           controller: _tabController, // カスタムコントローラ
